@@ -1,7 +1,8 @@
 from flask import Flask, request
 from flask_restful import Resource, Api
 import json
-from habilidades import ListaHabilidades, Habilidades
+from habilidades import ListaHabilidades, Habilidades, Validacao
+from habilidades import HabilidadeNotFoundException
 
 
 app = Flask(__name__)
@@ -25,6 +26,7 @@ class Desenvolvedor(Resource):
     def get(self, id):
         try:
             response = desenvolvedores[id]
+            self._valida_dados(response)
         except IndexError:
             mensagem = 'Desenvolvedor de id {} não existe'.format(id)
             response = {'status': 'error', 'mensagem': mensagem}
@@ -36,8 +38,13 @@ class Desenvolvedor(Resource):
     def put(self, id):
         try:
             dados = json.loads(request.data)
+            validacao = Validacao()
+            validacao._valida_habilidades(dados['habilidades'])
             desenvolvedores[id] = dados
             response = dados
+        except HabilidadeNotFoundException as e:
+            mensagem = str(e)
+            response = {'status': 'erro', 'mensagem': mensagem}
         except IndexError:
             mensagem = 'Não existe um desenvolvedor com id {}'.format(id)
             response = {'status': 'error', 'mensagem': mensagem}
@@ -64,11 +71,18 @@ class ListaDesenvolvedores(Resource):
         return desenvolvedores
 
     def post(self):
-        data = json.loads(request.data)
-        posicao = len(desenvolvedores)
-        data['id'] = posicao
-        desenvolvedores.append(data)
-        return desenvolvedores[posicao]
+        try:
+            dados = json.loads(request.data)
+            validacao = Validacao()
+            validacao._valida_habilidades(dados['habilidades'])
+            posicao = len(desenvolvedores)
+            dados['id'] = posicao
+            desenvolvedores.append(dados)
+            response = desenvolvedores[posicao]
+        except HabilidadeNotFoundException as e:
+            mensagem = str(e)
+            response = {'status': 'error', 'mensagem': mensagem}
+        return response
 
 
 api.add_resource(Desenvolvedor, '/dev/<int:id>/')

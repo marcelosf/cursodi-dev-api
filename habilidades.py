@@ -46,3 +46,17 @@ class Habilidades(Resource):
             mensagem = 'Não existe uma habilidade com indice {}'.format(id)
             response = {'status': 'erro', 'mensagem': mensagem}
         return response
+
+
+class Validacao:
+    def _valida_habilidades(self, items):
+        for habilidade in items:
+            if habilidade not in habilidades:
+                mensagem = 'A habilidade {} não está cadastrada'.format(habilidade)
+                raise HabilidadeNotFoundException(mensagem, 'habilidade não cadastrada')
+
+
+class HabilidadeNotFoundException(Exception):
+    def __init__(self, message, errors):
+        super().__init__(message)
+        self.errors = errors
